@@ -5,7 +5,7 @@ __global__ void matrixMultiplication ( int * A , int * B , int * C , int width )
     int component = 0;
     int row = blockIdx.y * blockDim.y + threadIdx.y;
     int col = blockIdx.x * blockDim.x + threadIdx.x;
-    int sum = 0; //each thread does one component in the output matrix
+    //int sum = 0; //each thread does one component in the output matrix
     if (row < width && col < width){
         for (int  i = 0; i< width; i++){
             component += A[row*width + i] * B[row*width + i];
@@ -21,7 +21,7 @@ void matrixMultiplicationCPUVersion(int* a, int* b, int* c, int width){
             for(int i = 0; i < width; i++){
                 component += a[row*width + i] * b[i*width+column];
             }
-            C[row*width +column] = component;
+            c[row*width +column] = component;
         }
     }
 
