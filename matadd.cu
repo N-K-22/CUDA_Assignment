@@ -1,5 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <time.h>
+#define _XOPEN_SOURCE 700
 // CUDA kernel for matrix addition
 __global__ void matrixAddition ( int * A , int * B , int * C , int width , int height ) {
     int row = blockIdx . y * blockDim . y + threadIdx . y ;
@@ -14,6 +16,12 @@ void matrixAdditionCPUVersion(int* a, int* b, int* c, int number_of_iterations){
     c[i] = a[i] + b[i];
     }
 }
+long long nsecs() {
+    struct timespec t;
+    clock_gettime(CLOCK_MONOTONIC, &t);
+    return t.tv_sec*1000000000 + t.tv_nsec;
+}
+
 int main () {
     const int width = 128; // Matrix width
     const int height = 128; // Matrix height
@@ -60,14 +68,14 @@ int main () {
     cudaEventElapsedTime(&GPU_time, GPU_start, GPU_stop);
     printf("Time taken for GPU version: %f ms\n", GPU_time);
     //CPU Modifications
-    clock_t start, end;
-    double cpu_time_used;
-    start = clock();
+    long long start, end;
+    long long cpu_time_used;
+    start = nsecs();
     matrixAdditionCPUVersion(A,B,d_D,height*width); //CPU matrix addition function
     memcpy(D, d_D, sizeof(int)*width*height); // storing the result of hte matrix for the CPU version
-    end = clock();
-    cpu_time_used = ((double) (end - start)) / CLOCKS_PER_SEC * 1000;
-    printf("Time taken for CPU version: %f ms\n", cpu_time_used);
+    end = nsecs();
+    cpu_time_used = end - start;
+    printf("Time taken for CPU version: %d ns\n", cpu_time_used);
     
     
     // TODO : Verify the correctness of the result
