@@ -38,9 +38,9 @@ int main () {
     }
 
     // TODO : Allocate device memory for matrices ’A ’, ’B ’, and ’C ’
-    int *d_A;
-    int *d_B;
-    int *d_C;
+    //int *d_A;
+   // int *d_B;
+   // int *d_C;
     int *d_D;
     
     cudaMallocManaged((void **)&d_A, width*width*sizeof(int));
