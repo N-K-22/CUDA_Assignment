@@ -44,7 +44,7 @@ int main() {
     int *d_B;
     for(int index = 0; index < width; index++){ A[index] = rand();}
     cudaMallocManaged((void**)&d_A, width*sizeof(int));
-    cudaMemcpy(d_A, A, width*width*sizeof(int), cudaMemcpyHostToDevice);
+    cudaMemcpy(d_A, A, width*sizeof(int), cudaMemcpyHostToDevice);
     
     cudaMallocManaged((void**)&d_B, width*sizeof(int));
     cudaMemset(d_B, 0, width*sizeof(int)); //initalize empty space to zero just for sanity purposes and to make debugging semi-easier
@@ -56,7 +56,7 @@ int main() {
     dim3 dimBlock (16*16 , 1 , 1); //block size --> group of threads that execute togther in shared memory --> takes the 16 from the y-dimension/second parameter to standardize the number of threads running to 256, this can be changed as needed in the code
     int sharedMemorySpace = width * sizeof(int);
 //Call parallel sum
-    parallelSum<<<dimGrid, dimBlock, sharedMemorySpace>>> (d_A, d_B,width*width);
+    parallelSum<<<dimGrid, dimBlock, sharedMemorySpace>>> (d_A, d_B,width);
     cudaMemcpy(B, d_B, width*sizeof(int), cudaMemcpyDeviceToHost);
     
 //CPU parallelSum
