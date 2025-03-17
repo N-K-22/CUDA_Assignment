@@ -8,7 +8,7 @@ __global__ void matrixMultiplication ( int * A , int * B , int * C , int width )
     //int sum = 0; //each thread does one component in the output matrix
     if (row < width && col < width){
         for (int  i = 0; i< width; i++){
-            component += A[row*width + i] * B[row*width + i];
+            component += A[row*width + i] * B[i*width + col];
         }
         C[row*width + col] = component; // location of where the value is stored in resulting matrix
     }
@@ -41,12 +41,12 @@ int main () {
     //int *d_A;
    // int *d_B;
    // int *d_C;
-    int *d_D;
+   // int *d_D;
     
     cudaMallocManaged((void **)&d_A, width*width*sizeof(int));
     cudaMallocManaged((void**)&d_B, width*width*sizeof(int));
     cudaMallocManaged((void**)&d_C, width*width*sizeof(int));
-    cudaMallocManaged((void**)&d_D, width*width*sizeof(int));
+    //cudaMallocManaged((void**)&d_D, width*width*sizeof(int));
 
     // TODO : Copy matrices 'A' and 'B' from host to device
 
@@ -68,9 +68,9 @@ int main () {
 
 //CPU Matrix Multiplication
 
-    matrixMultiplicationCPUVersion(d_A, d_B, d_D, width);
+    matrixMultiplicationCPUVersion(A, B, D, width);
 
-    memcpy(D, d_D, width*width*sizeof(int));
+    //memcpy(D, d_D, width*width*sizeof(int));
 
     // TODO : Verify the correctness of the result
 
@@ -94,7 +94,7 @@ int main () {
     cudaFree(d_A);
     cudaFree(d_B);
     cudaFree(d_C);
-    free(d_D);
+    //free(d_D);
     return 0;
 
 }
