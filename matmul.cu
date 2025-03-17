@@ -1,5 +1,13 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <time.h>
+#define _XOPEN_SOURCE 700
+long long nsecs() {
+    struct timespec t;
+    clock_gettime(CLOCK_MONOTONIC, &t);
+    return t.tv_sec*1000000000 + t.tv_nsec;
+}
+
 __global__ void matrixMultiplication ( int * A , int * B , int * C , int width ) {
     // TODO : Implement matrix multiplication kernel
     int component = 0;
@@ -36,6 +44,11 @@ int main () {
         A[i] = rand();
         B[i] = rand();
     }
+    cudaEvent_t GPU_start, GPU_stop;
+    float GPU_time = 0;
+    cudaEventCreate(&GPU_start);
+    cudaEventCreate(&GPU_stop);
+    cudaEventRecord(GPU_start);
 
     // TODO : Allocate device memory for matrices ’A ’, ’B ’, and ’C ’
     //int *d_A;
@@ -64,12 +77,20 @@ int main () {
     // TODO : Copy the result matrix ’C ’ from device to host
     cudaMemcpy(C, d_C, width*width*sizeof(int), cudaMemcpyDeviceToHost);
 
-
+    //timing the GPU kernel
+    cudaEventRecord(GPU_stop);
+    cudaEventSynchronize (GPU_stop); //waits for GPU_stop to complete
+    cudaEventElapsedTime(&GPU_time, GPU_start, GPU_stop);
+    printf("Time taken for GPU version: %f ms\n", GPU_time);
 
 //CPU Matrix Multiplication
-
+    long long start, end;
+    long long cpu_time_used;
+    start = nsecs();
     matrixMultiplicationCPUVersion(A, B, D, width);
-
+    end = nsecs();
+    cpu_time_used = end - start;
+    printf("Time taken for CPU version: %d ns\n", cpu_time_used);
     //memcpy(D, d_D, width*width*sizeof(int));
 
     // TODO : Verify the correctness of the result
