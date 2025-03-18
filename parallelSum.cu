@@ -92,14 +92,14 @@ int main() {
         printf("Error: %s\n", cudaGetErrorString(error));
     }
     
-    for (int i = 0; i < width; i++){ //extraneous for-loop 
+    //for (int i = 0; i < width; i++){ //extraneous for-loop 
         if( gpu_sum != C[0]){
             printf("Value for CPU and GPU does not align at %d \n", i);
             printf("CPU: %d\n", C[i]);
             printf("GPU: %d\n", B[i]);
             break;
         }
-    }
+    //}
     cudaFree(d_A);
     cudaFree(d_B);
     return 0;
