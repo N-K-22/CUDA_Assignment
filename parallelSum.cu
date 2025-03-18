@@ -36,7 +36,7 @@ void parallelSumCPUVersion(int* input,int* output ,int size){
         for (int  i = 0; i < size; i++){
             sum += input[i]; //summing up the values in the input array using open mp reduction reduction techniques
         }
-        #pragma omp atomic update
+        #pragma omp atomic update //atomic update to ensure that the sum is not being updated by multiple threads at the same time
         *output = sum;
     }
    
