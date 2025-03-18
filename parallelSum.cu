@@ -93,7 +93,7 @@ int main() {
     }
     
     //for (int i = 0; i < width; i++){ //extraneous for-loop 
-        if( gpu_sum != C[0]){
+        if( gpu_sum != C[0]){ //CPU and GPU verification
             printf("Value for CPU and GPU does not align at %d \n", i);
             printf("CPU: %d\n", C[i]);
             printf("GPU: %d\n", B[i]);
