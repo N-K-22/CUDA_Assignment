@@ -34,9 +34,9 @@ void parallelSumCPUVersion(int* input,int* output ,int size){
     #pragma omp parallel  for reduction (+:sum)
     {
         for (int  i = 0; i < size; i++){
-            sum += input[i];
+            sum += input[i]; //summing up the values in the input array using open mp reduction reduction techniques
         }
-        //#pragma omp atomic update
+        #pragma omp atomic update
         *output = sum;
     }
    
@@ -70,10 +70,10 @@ int main() {
     parallelSum<<<dimGrid, dimBlock, sharedMemorySpace>>> (d_A, d_B,width);
     cudaMemcpy(B, d_B, width*sizeof(int), cudaMemcpyDeviceToHost);
     int gpu_sum = 0;
-    for (int i = 0; i < ((width + 255) / 256); i++) { //was originally missing this part of it, the shared memory resulted in all of the values being spread out in output array
-        gpu_sum += B[i];
+    for (int i = 0; i < ((width + 255) / 256); i++) { //was originally messing this part of it, the shared memory resulted in all of the values being spread out in output array, did not update to reflect the 1D array format
+        gpu_sum += B[i]; //summing up the values in the output array from GPU
     }
-    printf("GPU sum: %d\n", gpu_sum); //debugging purposes
+   // printf("GPU sum: %d\n", gpu_sum); //debugging purposes
     //timing the GPU kernel
     cudaEventRecord(GPU_stop);
     cudaEventSynchronize (GPU_stop); //waits for GPU_stop to complete
