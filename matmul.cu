@@ -81,7 +81,7 @@ int main () {
     cudaEventRecord(GPU_stop);
     cudaEventSynchronize (GPU_stop); //waits for GPU_stop to complete
     cudaEventElapsedTime(&GPU_time, GPU_start, GPU_stop);
-    printf("Time taken for GPU version: %f ms\n", GPU_time);
+    printf("Time taken for GPU version: %ld ms\n", GPU_time);
 
 //CPU Matrix Multiplication
     long long start, end;
@@ -90,7 +90,7 @@ int main () {
     matrixMultiplicationCPUVersion(A, B, D, width);
     end = nsecs();
     cpu_time_used = end - start;
-    printf("Time taken for CPU version: %d ns\n", cpu_time_used);
+    printf("Time taken for CPU version: %ld ns\n", cpu_time_used);
     //memcpy(D, d_D, width*width*sizeof(int));
 
     // TODO : Verify the correctness of the result

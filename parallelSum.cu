@@ -1,7 +1,13 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include  <omp.h>
- 
+#include <time.h>
+#define _XOPEN_SOURCE 700
+long long nsecs() {
+    struct timespec t;
+    clock_gettime(CLOCK_MONOTONIC, &t);
+    return t.tv_sec*1000000000 + t.tv_nsec;
+}
 __global__ void parallelSum(int* inputArray, int* outputResult, int arraySize) {
     extern __shared__ int sharedMemory[];
     int threadID = threadIdx.x;
@@ -43,13 +49,18 @@ int main() {
     int *d_A;
     int *d_B;
     for(int index = 0; index < width; index++){ A[index] = rand();}
+    //start of cuda event record start time creation
+    cudaEvent_t GPU_start, GPU_stop;
+    float GPU_time = 0;
+    cudaEventCreate(&GPU_start);
+    cudaEventCreate(&GPU_stop);
+    cudaEventRecord(GPU_start);
+
     cudaMallocManaged((void**)&d_A, width*sizeof(int));
     cudaMemcpy(d_A, A, width*sizeof(int), cudaMemcpyHostToDevice);
     
     cudaMallocManaged((void**)&d_B, width*sizeof(int));
     cudaMemset(d_B, 0, width*sizeof(int)); //initalize empty space to zero just for sanity purposes and to make debugging semi-easier
-
-    int* d_C = (int*)malloc(sizeof(int) * width);
     
     // Define grid and block dimensions
     dim3 dimGrid (( width + 15) / 16 , 1 , 1); //grid size --> blocks that will be executed in parallel
@@ -58,9 +69,18 @@ int main() {
 //Call parallel sum
     parallelSum<<<dimGrid, dimBlock, sharedMemorySpace>>> (d_A, d_B,width);
     cudaMemcpy(B, d_B, width*sizeof(int), cudaMemcpyDeviceToHost);
-    
+        
+    //timing the GPU kernel
+    cudaEventRecord(GPU_stop);
+    cudaEventSynchronize (GPU_stop); //waits for GPU_stop to complete
+    cudaEventElapsedTime(&GPU_time, GPU_start, GPU_stop);
+    printf("Time taken for GPU version: %ld ms\n", GPU_time);
 //CPU parallelSum
+    //int* d_C = (int*)malloc(sizeof(int) * width);
+    long long start = nsecs();
     parallelSumCPUVersion(A,C,width);
+    long long end = nsecs();
+    printf("Time taken for CPU parallel sum kernel: %ld\n", (end-start));
 
     
     cudaError_t error = cudaDeviceSynchronize();
@@ -76,6 +96,6 @@ int main() {
     }
     cudaFree(d_A);
     cudaFree(d_B);
-    free(d_C);
+    //free(d_C);
     return 0;
 }
