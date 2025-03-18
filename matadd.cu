@@ -13,10 +13,10 @@ __global__ void matrixAddition ( int * A , int * B , int * C , int width , int h
 }
 void matrixAdditionCPUVersion(int* a, int* b, int* c, int number_of_iterations){
     for (int i = 0; i < number_of_iterations; i++){
-    c[i] = a[i] + b[i];
+    c[i] = a[i] + b[i]; //adds matrix values at the same index and stores it in the resulting matrix
     }
 }
-long long nsecs() {
+long long nsecs() { //timing of CPU kernel
     struct timespec t;
     clock_gettime(CLOCK_MONOTONIC, &t);
     return t.tv_sec*1000000000 + t.tv_nsec;
@@ -26,7 +26,7 @@ int main () {
     const int width = 128; // Matrix width
     const int height = 128; // Matrix height
     int A[width * height] , B[width * height] , C[width * height], D[width * height];
-    int size = width * height;
+    int size = width * height; //holder variable
     // TODO : Initialize matrices ’A ’ and ’B ’ with random values (host matrices)
     for (int i =0; i < size; i++){
         A[i] = rand();
@@ -47,7 +47,6 @@ int main () {
     cudaMallocManaged((void **)&d_A, width*height*sizeof(int));
     cudaMallocManaged((void**)&d_B, width*height*sizeof(int));
     cudaMallocManaged((void**)&d_C, width*height*sizeof(int));
-    d_D = (int*)malloc(sizeof(int)*width*height);
     
     // TODO : Copy matrices ’A ’ and ’B ’ from host to device
     cudaMemcpy(d_A,A,size,cudaMemcpyHostToDevice);
@@ -64,16 +63,18 @@ int main () {
 
     cudaMemcpy(C, d_C, size, cudaMemcpyDeviceToHost);
     cudaEventRecord(GPU_stop);
-    cudaEventSynchronize (GPU_stop); //waits for GPU_stop to complete
+    cudaEventSynchronize (GPU_stop); //waits for GPU_stop to complete --> ensures that the GPU kernel has finished executing before calculating the completion time
     cudaEventElapsedTime(&GPU_time, GPU_start, GPU_stop);
     printf("Time taken for GPU version: %f ms\n", GPU_time);
-    //CPU Modifications
+   
+    //CPU KERNEL Modifications for execution
     long long start, end;
     long long cpu_time_used;
-    start = nsecs();
+    d_D = (int*)malloc(sizeof(int)*width*height); //allocating memory for the CPU version of the resulting matrix
+    start = nsecs(); //CPU kernel time start
     matrixAdditionCPUVersion(A,B,d_D,height*width); //CPU matrix addition function
     memcpy(D, d_D, sizeof(int)*width*height); // storing the result of hte matrix for the CPU version
-    end = nsecs();
+    end = nsecs(); //CPU kernel time end
     cpu_time_used = end - start;
     printf("Time taken for CPU version: %d ns\n", cpu_time_used);
     
@@ -83,9 +84,9 @@ int main () {
     cudaError_t error = cudaGetLastError();
     if (error != cudaSuccess){
         printf("Error: %s\n", cudaGetErrorString(error));
-    }
+    }//ensures that the GPU kernel ran successfully and there were no errors in the kernel call that were masked by the progra,
     
-    for (int i = 0; i < width*height;i++){
+    for (int i = 0; i < width*height;i++){ //verify outputs for CPU and GPU
     
         if (D[i] != C[i]){
             printf("Value for CPU and GPU does not align at %d \n", i);
