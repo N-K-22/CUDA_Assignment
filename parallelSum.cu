@@ -36,10 +36,10 @@ void parallelSumCPUVersion(int* input,int* output ,int size){
         for (int  i = 0; i < size; i++){
             sum += input[i];
         }
-        #pragma omp atomic update
-        output = &sum;
-        
+        //#pragma omp atomic update
+        *output = sum;
     }
+   
 }
 int main() {
     // TODO : Write the main() function
@@ -63,13 +63,17 @@ int main() {
     cudaMemset(d_B, 0, width*sizeof(int)); //initalize empty space to zero just for sanity purposes and to make debugging semi-easier
     
     // Define grid and block dimensions
-    dim3 dimGrid (( width + 15) / 16 , 1 , 1); //grid size --> blocks that will be executed in parallel
+    dim3 dimGrid (( width + 255) / 256 , 1 , 1); //grid size --> blocks that will be executed in parallel
     dim3 dimBlock (16*16 , 1 , 1); //block size --> group of threads that execute togther in shared memory --> takes the 16 from the y-dimension/second parameter to standardize the number of threads running to 256, this can be changed as needed in the code
-    int sharedMemorySpace = width * sizeof(int);
+    int sharedMemorySpace = 16*16 * sizeof(int);
 //Call parallel sum
     parallelSum<<<dimGrid, dimBlock, sharedMemorySpace>>> (d_A, d_B,width);
     cudaMemcpy(B, d_B, width*sizeof(int), cudaMemcpyDeviceToHost);
-        
+    int gpu_sum = 0;
+    for (int i = 0; i < ((width + 255) / 256); i++) { //was originally missing this part of it, the shared memory resulted in all of the values being spread out in output array
+        gpu_sum += B[i];
+    }
+    printf("GPU sum: %d\n", gpu_sum); //debugging purposes
     //timing the GPU kernel
     cudaEventRecord(GPU_stop);
     cudaEventSynchronize (GPU_stop); //waits for GPU_stop to complete
@@ -88,14 +92,15 @@ int main() {
         printf("Error: %s\n", cudaGetErrorString(error));
     }
     
-    for (int i = 0; i < width; i++){
-        if(B[i] != C[i]){
+    for (int i = 0; i < width; i++){ //extraneous for-loop 
+        if( gpu_sum != C[0]){
             printf("Value for CPU and GPU does not align at %d \n", i);
+            printf("CPU: %d\n", C[i]);
+            printf("GPU: %d\n", B[i]);
             break;
         }
     }
     cudaFree(d_A);
     cudaFree(d_B);
-    //free(d_C);
     return 0;
 }
