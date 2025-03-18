@@ -18,19 +18,31 @@ __global__ void matrixMultiplication ( int * A , int * B , int * C , int width )
     __shared__ int sharedB[16][16];
     //int sum = 0; //each thread does one component in the output matrix
    for (int i = 0; i < (width+15)/16; i++){
-        sharedA[threadIdx.x][threadIdx.y] = A[row*width + i*16 + threadIdx.y];
-        sharedB[threadIdx.x][threadIdx.y] = B[(i*16 + threadIdx.x)*width + col];
-    }
-   __syncthreads();
-    if (row < width && col < width){
-        for (int  i = 0; i< width; i++){
-            component += sharedA[threadIdx.x][i] * sharedB[i][threadIdx.y];
+        
+        if (row < width && (i*16 + threadIdx.x) < width){ // sets the component 
+
+            sharedA[threadIdx.y][threadIdx.x] = A[row*width + i*16 + threadIdx.x]; //if the component falls within the area of shared memory covered by a thread
+
+        } else{
+            sharedA[threadIdx.y][threadIdx.x] = 0; // leave other parts blank
+        }
+
+        if ((i*16 + threadIdx.y) < width && col < width){
+            sharedB[threadIdx.y][threadIdx.x] = B[(i*16 + threadIdx.y)*width + col]; //if matrix coordinate falls within the area of shared memory covered by a thread
+        }
+        else{
+            sharedB[threadIdx.y][threadIdx.x] = 0;
         }
         __syncthreads();
-    
-        if (row < width && col < width) {
-            C[row*width + col] = component;
+        for (int  i = 0; i< 16; i++){
+            component += sharedA[threadIdx.y][i] * sharedB[i][threadIdx.x];
         }
+        __syncthreads();
+    }
+    if (row < width && col < width){
+    
+            C[row*width + col] = component;
+       
 
     }
    
@@ -86,7 +98,7 @@ int main () {
     dim3 dimBlock (16 , 16 , 1);
 
     // Launch the matrix multiplication kernel
-    matrixMultiplication<<<dimGrid , dimBlock >>>(d_A , d_B , d_C , width );
+    matrixMultiplication<<<dimGrid , dimBlock, 2*16*16*sizeof(int) >>>(d_A , d_B , d_C , width );
 
     // TODO : Copy the result matrix ’C ’ from device to host
     cudaMemcpy(C, d_C, width*width*sizeof(int), cudaMemcpyDeviceToHost);
@@ -121,6 +133,8 @@ int main () {
     for (int i = 0; i < width*width; i++){
         if(D[i] != C[i]){
             printf("Value for CPU and GPU does not align at %d \n", i);
+            printf("C: %d, D: %d \n", C[i], D[i]);
+
             break;
         }
     }
